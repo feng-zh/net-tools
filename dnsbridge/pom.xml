@@ -1,31 +1,28 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
-	<groupId>org.fengzh.net.tools</groupId>
+	<parent>
+		<groupId>org.fengzh.tools.net</groupId>
+		<artifactId>net-tools</artifactId>
+		<version>1.0.0-SNAPSHOT</version>
+		<relativePath>..</relativePath>
+	</parent>
 	<artifactId>dnsbridge</artifactId>
-	<version>1.0.0-SNAPSHOT</version>
 	<name>DNS Bridge</name>
 	<build>
 		<finalName>${project.artifactId}</finalName>
 		<plugins>
 			<plugin>
-				<artifactId>maven-compiler-plugin</artifactId>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-jar-plugin</artifactId>
 				<configuration>
-					<source>1.6</source>
-					<target>1.6</target>
+					<archive>
+						<manifest>
+							<mainClass>org.fengzh.tools.net.dnsbridge.DnsServer</mainClass>
+						</manifest>
+					</archive>
 				</configuration>
 			</plugin>
-		      <plugin>
-		      	<groupId>org.apache.maven.plugins</groupId>
-		        <artifactId>maven-jar-plugin</artifactId>
-		        <configuration>
-		          <archive>
-		            <manifest>
-		              <mainClass>org.fengzh.tools.net.dnsbridge.DnsServer</mainClass>
-		            </manifest>
-		          </archive>
-		        </configuration>
-		      </plugin>
 		</plugins>
 	</build>
 </project>
