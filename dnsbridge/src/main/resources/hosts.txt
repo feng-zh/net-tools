@@ -1,0 +1,6 @@
+173.194.72.121	ghs.googlehosted.com
+173.194.72.121	ghs.l.google.com
+66.220.152.19	*.facebook.com
+#2a03:2880:2030:2f07:face:b00c::1	www.facebook.com
+#2a03:2880:10:cf07:face:b00c::1	www.facebook.com
+
