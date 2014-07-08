@@ -1,6 +1,10 @@
 package org.fengzh.tools.net.portforward;
 
+import java.io.BufferedReader;
+import java.io.FileReader;
 import java.io.IOException;
+import java.util.LinkedHashSet;
+import java.util.Set;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -11,6 +15,8 @@ public class Main {
 
     /**
      * java [App Name] <remote host> <remote port> [<local port>]
+     * or
+     * java [App Name] @host.txt <remote port> [<local port>]
      * 
      * @param args
      */
@@ -19,7 +25,11 @@ public class Main {
             verbose();
             return;
         }
-        String[] remoteHosts = args[0].split("/");
+        String[] remoteHosts = loadRemoteHosts(args[0]);
+        if (remoteHosts.length == 0) {
+        	 System.err.println("Error: No available remote hosts.");
+             return;
+        }
         int[] remotePorts;
         try {
             int i = 0;
@@ -62,7 +72,38 @@ public class Main {
         }
     }
 
-    public static void verbose() {
+    private static String[] loadRemoteHosts(String argument) {
+    	if (argument.startsWith("@")) {
+    		argument=argument.substring(1);
+    		Set<String> hosts = new LinkedHashSet<String>();
+    		BufferedReader reader = null;
+			try {
+				reader = new BufferedReader(new FileReader(argument));
+				String line;
+				while ((line = reader.readLine()) != null) {
+					line = line.trim();
+					if (!line.startsWith("#") && line.length() > 0) {
+						hosts.add(line);
+					}
+				}
+			} catch (IOException e) {
+				System.err.println("Error: Fail to load remote host file: " + argument + ", caused by: "
+						+ e.getMessage());
+			} finally {
+				if (reader != null) {
+					try {
+						reader.close();
+					} catch (IOException ignored) {
+					}
+				}
+			}
+			return hosts.toArray(new String[0]);
+    	} else {
+    		return argument.split("/");
+    	}
+	}
+
+	public static void verbose() {
         System.err
                 .println("java [App Name] <remote host>[/remote host2/...] <remote port>[/remote port2/...]");
     }

@@ -7,13 +7,14 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
 
 import org.fengzh.tools.net.core.ChannelForward;
-import org.fengzh.tools.net.core.ChannelHandler;
 import org.fengzh.tools.net.core.ChannelForward.ConnectStatusHandler;
+import org.fengzh.tools.net.core.ChannelHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -24,12 +25,14 @@ class ServerWorker implements Runnable, ServerWorkerMBean {
 
 	private Selector selector;
 	private InetSocketAddress[] remoteAddresses;
+	private boolean[] badAddresses;
 	private int currentAddressPos;
 	private Set<ChannelForward> connectingPool = new HashSet<ChannelForward>();
 
 	public ServerWorker(Selector selector, InetSocketAddress[] remoteAddresses) {
 		this.selector = selector;
 		this.remoteAddresses = remoteAddresses;
+		this.badAddresses = new boolean[remoteAddresses.length];
 		this.currentAddressPos = 0;
 	}
 
@@ -103,26 +106,43 @@ class ServerWorker implements Runnable, ServerWorkerMBean {
 		}
 		linkToRemote(local);
 	}
+	
+	private InetSocketAddress getCurrentRemoteAddress() {
+		int check = remoteAddresses.length;
+		while (badAddresses[currentAddressPos] && check > 0) {
+			currentAddressPos = (currentAddressPos + 1) % remoteAddresses.length;
+			check--;
+		}
+		if (check == 0) {
+			return null;
+		} else {
+			return remoteAddresses[currentAddressPos];
+		}
+	}
 
 	private void linkToRemote(final SocketChannel local) {
 		final ChannelForward forward = new ChannelForward(local);
 		try {
-			forward.setAddress(remoteAddresses[currentAddressPos]);
+			InetSocketAddress current = getCurrentRemoteAddress();
+			if (current == null) {
+				restBadAddress();
+				current = getCurrentRemoteAddress();
+			}
+			forward.setAddress(current);
 			forward.setConnectStatusHandler(new ConnectStatusHandler() {
 
 				public void connected(SelectionKey key) {
 				}
 
 				public void connectError(SelectionKey key) {
-					currentAddressPos++;
-					if (currentAddressPos < remoteAddresses.length) {
+					badAddresses[currentAddressPos] = true;
+					InetSocketAddress available = getCurrentRemoteAddress();
+					if (available!=null) {
 						logger.info("Change address to next address: "
-								+ remoteAddresses[currentAddressPos]
-										.getHostName() + ":"
-								+ remoteAddresses[currentAddressPos].getPort());
+								+ available.getHostName() + ":"
+								+ available.getPort());
 						linkToRemote(local);
 					} else {
-						currentAddressPos = 0;
 						logger.error(
 								"No suitable connections, closing local connection {}",
 								local.socket().getInetAddress());
@@ -144,6 +164,11 @@ class ServerWorker implements Runnable, ServerWorkerMBean {
 				logger.debug("close error", ioe);
 			}
 		}
+	}
+
+	private void restBadAddress() {
+		Arrays.fill(badAddresses, false);
+		logger.warn("reset bad address to inital values");
 	}
 
 	private static void close(Closeable closeHandler) {
