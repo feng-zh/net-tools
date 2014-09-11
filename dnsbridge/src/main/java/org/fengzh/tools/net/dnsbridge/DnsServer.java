@@ -30,7 +30,7 @@ public class DnsServer implements Runnable {
 		Properties prop = new Properties();
 		try {
 			prop.load(DnsServer.class
-					.getResourceAsStream("dnsfilter.properties"));
+					.getResourceAsStream("/dnsfilter.properties"));
 		} catch (Exception e) {
 			System.err.println("Can't find file 'dnsfilter.properties' due to "
 					+ e);
